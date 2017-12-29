@@ -12,7 +12,6 @@ let queue = [];
 function _registerListener(win, opts = {}, cb = () => {}) {
 
     lastWindowCreated = win;
-    downloadFolder = opts.downloadFolder || downloadFolder;
 
     const listener = (e, item, webContents) => {
 
