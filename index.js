@@ -5,7 +5,6 @@ const { BrowserWindow } = electron;
 const request = require("request");
 
 const app = electron.app;
-let downloadFolder = app.getPath("downloads");
 let lastWindowCreated;
 
 let queue = [];
@@ -19,7 +18,7 @@ function _registerListener(win, opts = {}, cb = () => {}) {
 
         let queueItem = _popQueueItem(item.getURL());
 
-        const filePath = path.join(downloadFolder, path.join(queueItem.path, item.getFilename()));
+        const filePath = queueItem.path ? path.join(queueItem.path, item.getFilename()) : path.join(app.getPath('downloads'), item.getFilename());
 
         const totalBytes = item.getTotalBytes();
 
@@ -97,7 +96,7 @@ var download = (options, callback) => {
 
         const filename = path.basename(response.request.uri.href);
 
-        const filePath = path.join(path.join(downloadFolder, options.path.toString()), filename);
+        const filePath = options.path ? path.join(options.path, item.getFilename()) : path.join(app.getPath('downloads'), item.getFilename());
 
         if (fs.existsSync(filePath)) {
             const stats = fs.statSync(filePath);
