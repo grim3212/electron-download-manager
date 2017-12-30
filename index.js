@@ -5,6 +5,7 @@ const { BrowserWindow } = electron;
 const request = require("request");
 
 const app = electron.app;
+let downloadFolder = app.getPath("downloads");
 let lastWindowCreated;
 
 let queue = [];
@@ -12,12 +13,13 @@ let queue = [];
 function _registerListener(win, opts = {}, cb = () => {}) {
 
     lastWindowCreated = win;
+	downloadFolder = opts.downloadFolder || downloadFolder;
 
     const listener = (e, item, webContents) => {
 
         let queueItem = _popQueueItem(item.getURL());
 
-        const filePath = queueItem.path ? path.join(queueItem.path, item.getFilename()) : path.join(app.getPath('downloads'), item.getFilename());
+        const filePath = queueItem.path ? path.join(queueItem.path, item.getFilename()) : path.join(downloadFolder, item.getFilename());
 
         const totalBytes = item.getTotalBytes();
 
@@ -47,7 +49,15 @@ function _registerListener(win, opts = {}, cb = () => {}) {
             if (state === 'interrupted') {
                 const message = `The download of ${item.getFilename()} was interrupted`;
 
-                finishedDownloadCallback(new Error(message), item.getURL())
+                finishedDownloadCallback(new Error(message), { 
+					path: item.getSavePath(),
+					url: item.getURL(),
+					mimeType: item.getMimeType(),
+					filename: item.getFilename(),
+					size: item.getTotalBytes(),
+					state: item.getState(),
+					lastModified: item.getLastModifiedTime()
+				});
 
             } else if (state === 'completed') {
                 if (process.platform === 'darwin') {
@@ -58,7 +68,15 @@ function _registerListener(win, opts = {}, cb = () => {}) {
                 //     webContents.session.removeListener('will-download', listener);
                 // }
 
-                finishedDownloadCallback(null, { url: item.getURL(), filePath });
+                finishedDownloadCallback(null, { 
+					path: item.getSavePath(),
+					url: item.getURL(),
+					mimeType: item.getMimeType(),
+					filename: item.getFilename(),
+					size: item.getTotalBytes(),
+					state: item.getState(),
+					lastModified: item.getLastModifiedTime()
+				});
 
             }
 
@@ -95,7 +113,7 @@ var download = (options, callback) => {
 
         const filename = path.basename(response.request.uri.href);
 
-        const filePath = options.path ? path.join(options.path, item.getFilename()) : path.join(app.getPath('downloads'), item.getFilename());
+        const filePath = options.path.toString() ? path.join(options.path.toString(), filename) : path.join(downloadFolder, filename);
 
         if (fs.existsSync(filePath)) {
             const stats = fs.statSync(filePath);
@@ -124,7 +142,15 @@ var download = (options, callback) => {
 
                 let finishedDownloadCallback = callback || function() {};
 
-                finishedDownloadCallback(null, { url: response.request.uri.href, filePath });
+                finishedDownloadCallback(null, { 
+					path: filePath,
+					url: response.request.uri.href,
+					mimeType: response.headers["content-type"],
+					filename: filename,
+					size: fileOffset,
+					state: 'completed',
+					lastModified: response.headers["last-modified"]
+				});
             }
 
         } else {
