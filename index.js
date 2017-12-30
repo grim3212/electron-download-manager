@@ -163,26 +163,35 @@ var download = (options, callback) => {
 
 var bulkDownload = (options, callback) => {
 
+	//You can declare a path that they will go into by default or 
+	//the downloads array may contain a path
+
     options = Object.assign({}, {
-        urls: [],
+        downloads: [],
         path: ""
     }, options);
 
-    let urlsCount = options.urls.length;
+    let urlsCount = options.downloads.length;
     let finished = [];
     let errors = [];
 
-    options.urls.forEach((url) => {
+    options.downloads.forEach((dl) => {
         download({
-            url,
-            path: options.path
+            url: dl.url,
+            path: dl.path ? dl.path : options.path,
+			onProgress: dl.onProgress
         }, function(error, item) {
-
+		
             if (error) {
                 errors.push(item);
             } else {
                 finished.push(item);
             }
+			
+			//Call an optional callback for each dl item
+			let finishedDownloadCallback = dl.callback || function() {};
+			
+			finishedDownloadCallback(error, item);
 
             let errorsCount = errors.length;
             let finishedCount = finished.length;
