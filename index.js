@@ -78,9 +78,7 @@ function _registerListener(win, opts = {}, cb = () => {}) {
 						state: item.getState(),
 						lastModified: item.getLastModifiedTime()
 					});
-
 				}
-
 			});
 		}
     };
@@ -89,7 +87,6 @@ function _registerListener(win, opts = {}, cb = () => {}) {
 }
 
 var register = (opts = {}) => {
-
     app.on('browser-window-created', (e, win) => {
         _registerListener(win, opts);
     });
@@ -167,8 +164,24 @@ var download = (options, callback) => {
             }
 
         } else {
-            console.log(filename + ' does not exist, download it now');
-            win.webContents.downloadURL(options.url);
+            console.log(filename + ' does not exist, try and download it now');
+			
+			//Don't try to download if the status code isn't OK
+			if(response.statusCode != 200){
+				let finishedDownloadCallback = callback || function() {};
+
+                finishedDownloadCallback(new Error('download for ' + url + ' was not found. [StatusCode] = ' + response.statusCode), { 
+					path: filePath,
+					url: url,
+					mimeType: response.headers["content-type"],
+					filename: filename,
+					size: 0,
+					state: 'not-available'
+				});
+			
+			}else{
+				win.webContents.downloadURL(options.url);
+			}
         }
     });
 
