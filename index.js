@@ -1,8 +1,7 @@
 'use strict';
 const path = require('path');
 const electron = require('electron');
-const { BrowserWindow } = electron;
-const request = require("request");
+const { BrowserWindow, net } = electron;
 
 const app = electron.app;
 let downloadFolder = app.getPath("downloads");
@@ -103,14 +102,24 @@ var download = (options, callback) => {
     options = Object.assign({}, {
         path: ""
     }, options);
-
-    request(options.url).on("response", function(response) {
-        response.request.abort();
+	
+	const request = net.request({url: options.url, redirect: 'manual'});
+	
+	var url = '';
+	
+	request.on("redirect", function(status, method, redirectUrl, headers) {
+		request.followRedirect();
 		
-		const filename = decodeURIComponent(path.basename(response.request.uri.pathname));
+		url = redirectUrl;
+	});
+
+    request.on("response", function(response) {
+        request.abort();
+		
+		const filename = decodeURIComponent(path.basename(url));
 
         queue.push({
-            url: response.request.uri.href,
+            url: url,
 			filename: filename,
             path: options.path.toString(),
             callback: callback,
@@ -134,7 +143,7 @@ var download = (options, callback) => {
 
                 options = {
                     path: filePath,
-                    urlChain: [response.request.uri.href],
+                    urlChain: [url],
                     offset: parseInt(fileOffset),
                     length: serverFileSize,
                     lastModified: response.headers["last-modified"]
@@ -148,7 +157,7 @@ var download = (options, callback) => {
 
                 finishedDownloadCallback(null, { 
 					path: filePath,
-					url: response.request.uri.href,
+					url: url,
 					mimeType: response.headers["content-type"],
 					filename: filename,
 					size: fileOffset,
@@ -161,8 +170,10 @@ var download = (options, callback) => {
             console.log(filename + ' does not exist, download it now');
             win.webContents.downloadURL(options.url);
         }
-    })
+    });
 
+	//End the request
+	request.end();
 }
 
 var bulkDownload = (options, callback) => {
