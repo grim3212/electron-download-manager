@@ -167,7 +167,7 @@ var download = (options, callback) => {
             console.log(filename + ' does not exist, try and download it now');
 			
 			//Don't try to download if the status code isn't OK
-			if(response.statusCode != 200){
+			if(response.statusCode == 404 || response.statusCode == 410){
 				let finishedDownloadCallback = callback || function() {};
 
                 finishedDownloadCallback(new Error('download for ' + url + ' was not found. [StatusCode] = ' + response.statusCode), { 
@@ -178,8 +178,11 @@ var download = (options, callback) => {
 					size: 0,
 					state: 'not-available'
 				});
-			
 			}else{
+				if(response.statusCode != 200){
+					console.log('download exists but ' + url + ' returned a status code of ' + response.statusCode);
+				}
+			
 				win.webContents.downloadURL(options.url);
 			}
         }
