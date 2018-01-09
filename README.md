@@ -2,6 +2,14 @@
 
 > Manage downloadItems from [Electron](http://electron.atom.io)'s BrowserWindows without user interaction, allowing single file download and bulk downloading asynchronously
 
+#### Modified version of [danialnieto's electron-download-manager](https://github.com/danielnieto/electron-download-manager)
+This includes a few enhancements that I needed.
+
+- The ability to have a callback for each file in bulkDownload
+- The ability to use onProgress for each file in bulkDownload
+- The abiity to specify different paths for each file from the default paths
+- Pass extra information about the DownloadItem in the callback instead of just the url
+- Removed a dependency on request and instead used Electron's ClientRequest
 
 ## Why?
 
